@@ -1,0 +1,254 @@
+---
+title: "vizualization criteria worksheet"
+output: html_document
+date: "2025-11-10"
+---
+
+# ============================================================
+# VISUALIZATION PLOTS
+# ============================================================
+
+```{r setup,echo=FALSE,message=FALSE,warning=FALSE}
+library(ggplot2)
+library(scales)
+```
+# ============================================================================
+# RESEARCH TOPIC: Job Market Analysis - Automation Risk and Skills Assessment
+# ============================================================================
+
+# Load required libraries
+
+```{r echo=FALSE,message=FALSE,warning=FALSE}
+
+library(tidyverse)
+library(plotly)
+library(DT)
+library(dplyr)
+library(readr)
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(gridExtra)
+
+dat <- read_csv("C:/Users/user/Downloads/AI_Impact_on_Jobs_2030.csv")
+```
+
+```{r summary, echo=FALSE}
+str(dat)
+summary(dat)
+```
+# ============================================================
+# VISUALIZATION 1: Average Salary by Education Level
+# ============================================================
+# Purpose: Compare how education level affects salary across jobs
+
+```{r fig1,include=FALSE}
+viz1_data <- dat %>%
+  # Remove any rows with missing salary or education data
+  filter(!is.na(Average_Salary), !is.na(Education_Level)) %>%
+  # Group by education level
+  group_by(Education_Level) %>%
+  # Calculate summary statistics
+  summarise(
+    Mean_Salary = mean(Average_Salary),
+    Median_Salary = median(Average_Salary),
+    Count = n(),
+    SD_Salary = sd(Average_Salary)
+  ) %>%
+  # Arrange by mean salary descending
+  arrange(desc(Mean_Salary))
+```
+
+# View the prepared data
+```{r viz1, echo=FALSE}
+print("Visualization 1 Data: Average Salary by Education Level")
+print(viz1_data)
+```
+
+# ============================================================
+# VISUALIZATION 2: AI Exposure vs Automation Probability by Risk Category
+# ============================================================
+# Purpose: Examine relationship between AI exposure and automation risk
+
+```{r fig2,include=FALSE}
+viz2_data <- dat %>%
+  # Remove rows with missing values in key variables
+  filter(!is.na(AI_Exposure_Index), 
+         !is.na(Automation_Probability_2030),
+         !is.na(Risk_Category)) %>%
+  # Select only the columns needed for visualization
+  select(Job_Title, 
+         AI_Exposure_Index, 
+         Automation_Probability_2030, 
+         Risk_Category,
+         Average_Salary) %>%
+  # Arrange by risk category for better visualization
+  arrange(Risk_Category, desc(Automation_Probability_2030))
+```
+
+# View the prepared data
+```{r viz2, echo=FALSE}
+
+print("Visualization 2 Data: AI Exposure vs Automation Probability")
+print(head(viz2_data, 10))
+```
+
+
+# ============================================================
+# VISUALIZATION 3: Top 10 Skills Demand Across High-Risk Jobs
+# ============================================================
+# Purpose: Identify which skills are most common in high automation risk jobs
+
+```{r fig3,include=FALSE}
+viz3_data <- dat %>%
+  # Filter for high-risk jobs only
+  filter(Risk_Category == "High") %>%
+  # Select job title and all skill columns
+  select(Job_Title, starts_with("Skill_")) %>%
+  # Reshape data from wide to long format
+  pivot_longer(cols = starts_with("Skill_"),
+               names_to = "Skill_Number",
+               values_to = "Skill_Value") %>%
+  # Remove rows where skill value is 0 or NA
+  filter(!is.na(Skill_Value), Skill_Value > 0) %>%
+  # Group by skill number
+  group_by(Skill_Number) %>%
+  # Calculate average skill value and count
+  summarise(
+    Avg_Skill_Value = mean(Skill_Value),
+    Skill_Frequency = n(),
+    Total_Skill_Score = sum(Skill_Value)
+  ) %>%
+  # Arrange by average skill value descending
+  arrange(desc(Avg_Skill_Value)) %>%
+  # Keep top 10 skills
+  head(10)
+```
+
+# View the prepared data
+
+```{r viz3, echo=FALSE}
+print("Visualization 3 Data: Top 10 Skills in High-Risk Jobs")
+print(viz3_data)
+```
+
+# ============================================================
+# PLOT 1: Average Salary by Education Level
+# ============================================================
+```{r plot1, echo=FALSE}
+plot1 <- ggplot(viz1_data, aes(x = reorder(Education_Level, Mean_Salary), 
+                                y = Mean_Salary, 
+                                fill = Education_Level)) +
+  geom_col(width = 0.7) +
+  geom_text(aes(label = paste0("$", comma(round(Mean_Salary, 0)))), 
+            hjust = -0.1, size = 4) +
+  coord_flip() +
+  scale_y_continuous(labels = dollar_format(), 
+                     expand = expansion(mult = c(0, 0.15))) +
+  scale_fill_brewer(palette = "Set2") +
+  labs(title = "Average Salary by Education Level",
+       subtitle = "Higher education correlates with higher average salaries",
+       x = "Education Level",
+       y = "Average Salary ($)",
+       caption = paste0("Based on ", sum(viz1_data$Count), " job positions")) +
+  theme_minimal() +
+  theme(legend.position = "none",
+        plot.title = element_text(face = "bold", size = 16),
+        plot.subtitle = element_text(size = 11, color = "gray40"),
+        axis.text = element_text(size = 11),
+        panel.grid.major.y = element_blank())
+
+print(plot1)
+
+```
+
+
+#Weakness
+#A significant weakness of this visualization is that it only shows mean salary without displaying the variability or distribution of salaries within each education category. This is problematic because the mean can be heavily influenced by outliers, and it doesn't tell us whether salaries are tightly clustered or widely dispersed within each education level. For instance, if PhD holders have a few extremely high-paying positions and many lower-paying academic roles, the mean would be misleading.
+#Improvement: Add error bars showing standard deviation or confidence intervals, or switch to a box plot that displays the median, quartiles, and outliers. This would give viewers a more complete picture of salary distributions. Alternatively, overlay individual data points with jitter to show the actual spread of values while maintaining the summary bars.
+
+#Strength
+#The visualization's greatest strength is its use of horizontal orientation combined with ordered categories. By flipping the coordinate system and ordering education levels by salary (using reorder()), the plot creates an intuitive reading experience that immediately communicates the hierarchy. The addition of dollar value labels directly on the bars eliminates the need for viewers to estimate values from the y-axis, making the exact comparisons crystal clear. The clean minimal theme with removed gridlines on the category axis reduces visual clutter while maintaining necessary reference lines for the salary scale. This design makes it accessible even to audiences unfamiliar with data visualization.
+
+# ============================================================
+# PLOT 2: AI Exposure vs Automation Probability
+# ============================================================
+
+```{r plot2, echo=FALSE}
+plot2 <- ggplot(viz2_data, aes(x = AI_Exposure_Index, 
+                                y = Automation_Probability_2030, 
+                                color = Risk_Category,
+                                size = Average_Salary)) +
+  geom_point(alpha = 0.6) +
+  geom_smooth(method = "lm", se = FALSE, linetype = "dashed", size = 0.8) +
+  scale_color_manual(values = c("High" = "#D32F2F", 
+                                 "Medium" = "#F57C00", 
+                                 "Low" = "#388E3C")) +
+  scale_size_continuous(labels = dollar_format(), range = c(2, 10)) +
+  scale_x_continuous(labels = number_format(accuracy = 0.01)) +
+  scale_y_continuous(labels = number_format(accuracy = 0.01)) +
+  labs(title = "AI Exposure Index vs. Automation Probability by 2030",
+       subtitle = "Examining the relationship between AI exposure and automation risk",
+       x = "AI Exposure Index",
+       y = "Automation Probability (2030)",
+       color = "Risk Category",
+       size = "Average Salary",
+       caption = paste0("n = ", nrow(viz2_data), " jobs")) +
+  theme_minimal() +
+  theme(plot.title = element_text(face = "bold", size = 16),
+        plot.subtitle = element_text(size = 11, color = "gray40"),
+        legend.position = "right",
+        panel.grid.minor = element_blank())
+
+print(plot2)
+
+
+```
+
+
+
+#Weakness
+#The most significant weakness is the use of bubble size to represent salary, which creates overlapping issues and makes precise comparisons difficult. When points overlap, smaller bubbles disappear behind larger ones, potentially hiding important patterns. Additionally, human perception of area is notoriously poor—viewers often underestimate the difference between bubble sizes. The combination of color (risk category), position (two continuous variables), and size (salary) creates cognitive overload, making it hard to focus on any single relationship.
+#Improvement: Remove the size aesthetic and instead use faceting (small multiples) to create separate panels for each risk category. This would eliminate overlap and make patterns within each risk group clearer. Alternatively, create two separate visualizations: one scatter plot for AI exposure vs. automation probability colored by risk, and a second plot exploring the salary relationship separately. If size must be included, add a legend with example bubble sizes and values to help viewers calibrate their perception.
+
+#Strength
+#The visualization excels in its strategic use of color to encode risk categories with intuitive color associations. Red for high risk, orange for medium risk, and green for low risk leverages universal color conventions that immediately communicate danger levels without requiring viewers to consult the legend. The addition of trend lines using geom_smooth() is particularly effective—it reveals the overall relationship between AI exposure and automation probability while allowing viewers to still see individual data points. This dual layer approach (points + trend) helps viewers understand both the general pattern and the variability around it, making the statistical relationship accessible to non-technical audiences.
+
+# ============================================================
+# PLOT 3: Top 10 Skills in High-Risk Jobs
+# ============================================================
+
+```{r plot3, echo=FALSE}
+plot3 <- ggplot(viz3_data, aes(x = reorder(Skill_Number, Avg_Skill_Value), 
+                                y = Avg_Skill_Value,
+                                fill = Avg_Skill_Value)) +
+  geom_col(width = 0.7) +
+  geom_text(aes(label = round(Avg_Skill_Value, 2)), 
+            hjust = -0.2, size = 3.5) +
+  coord_flip() +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.15))) +
+  scale_fill_gradient(low = "#FFF9C4", high = "#F57F17") +
+  labs(title = "Top 10 Skills in High Automation Risk Jobs",
+       subtitle = "Average skill values for jobs categorized as high automation risk",
+       x = "Skill",
+       y = "Average Skill Value",
+       caption = "Higher values indicate greater skill importance") +
+  theme_minimal() +
+  theme(legend.position = "none",
+        plot.title = element_text(face = "bold", size = 16),
+        plot.subtitle = element_text(size = 11, color = "gray40"),
+        axis.text = element_text(size = 10),
+        panel.grid.major.y = element_blank())
+
+print(plot3)
+```
+
+
+
+
+#Weakness
+#The critical weakness is that the visualization uses generic skill labels (Skill_1, Skill_2, etc.) instead of meaningful skill names, rendering the chart nearly useless for decision-making or insight generation. Viewers cannot understand what skills are actually important because the labels are just placeholder identifiers. This is a fundamental data preparation problem that undermines the entire visualization—without knowing whether Skill_1 represents "Programming," "Communication," or "Physical Stamina," the chart cannot inform career decisions or policy recommendations.
+#Improvement: Map the skill column names to their actual descriptions before creating the plot. If the dataset doesn't include skill names, create a lookup table or data dictionary. Additionally, consider adding a second metric—perhaps showing the frequency of each skill alongside its average value using a grouped bar chart or a dot plot with two different point types. This would help distinguish between skills that are moderately important across many jobs versus skills that are critically important in fewer positions.
+
+#Strength
+#The visualization's key strength is its effective use of gradient fill coloring combined with value labels. The gradient from light yellow to dark orange creates a visual hierarchy that reinforces the numeric ordering, allowing viewers to quickly identify which skills have higher values through both position and color intensity. This redundant encoding (position + color) follows best practices in accessible design. The horizontal orientation with text labels on the bars makes it easy to read skill names (or would be, if they were meaningful names), and the clean minimal design keeps focus on the data. The decision to limit the display to the top 10 skills prevents information overload and helps maintain viewer attention on the most important findings.

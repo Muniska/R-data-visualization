@@ -1,0 +1,242 @@
+---
+title: "project proposal"
+author: "MUNISA ABDUKARIMOVA"
+output: html_document
+date: "2025-11-10"
+---
+
+
+# ============================================================================
+# RESEARCH TOPIC: Job Market Analysis - Automation Risk and Skills Assessment
+# ============================================================================
+# This analysis examines the relationship between job characteristics and 
+# automation risk, including salary trends, required skills, education levels,
+# and technology growth factors across different occupations.
+#
+# DATA SOURCE: 
+# - Dataset name: "dat"
+# - Contains 36 job positions with various attributes
+#
+# DATA DESCRIPTION:
+# - Job_Title: Name of the occupation
+# - Average_Salary: Mean salary for the position
+# - Years_Experience: Required years of experience
+# - Education_Level: Educational requirements (High School, Bachelor's, Master's, PhD)
+# - AI_Exposure_Index: Measure of AI exposure (0-1 scale)
+# - Tech_Growth_Factor: Technology growth rate indicator
+# - Automation_Probability_2030: Predicted automation probability by 2030
+# - Risk_Category: Classification of automation risk (Low, Medium, High)
+# - Skill_1 to Skill_10: Various skill proficiency levels (0-1 scale)
+# ============================================================================
+
+# Load required libraries
+
+```{r setup,echo=FALSE,message=FALSE,warning=FALSE}
+
+library(tidyverse)
+library(plotly)
+library(DT)
+library(dplyr)
+library(readr)
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(gridExtra)
+
+dat <- read_csv("C:/Users/user/Downloads/AI_Impact_on_Jobs_2030.csv")
+
+```
+# Assuming 'dat' is already loaded in your environment
+# If not, load it with: dat <- read.csv("your_file.csv")
+
+# ============================================================================
+# FIGURE 1: Scatter Plot - Salary vs Automation Probability by Risk Category
+# ============================================================================
+
+```{r fig1,include=FALSE}
+fig1 <- ggplot(dat, aes(x = Average_Salary, y = Automation_Probability_2030, 
+                        color = Risk_Category, size = Years_Experience)) +
+  geom_point(alpha = 0.6) +
+  scale_color_manual(values = c("Low" = "#2ecc71", "Medium" = "#f39c12", 
+                                "High" = "#e74c3c")) +
+  labs(title = "Fig 1: Salary vs Automation Risk by Risk Category",
+       x = "Average Salary ($)",
+       y = "Automation Probability (2030)",
+       color = "Risk Category",
+       size = "Years Experience") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5, face = "bold"))
+```
+
+# ============================================================================
+# FIGURE 2: Scatter Plot - AI Exposure vs Tech Growth Factor
+# ============================================================================
+
+```{r fig2,include=FALSE}
+fig2 <- ggplot(dat, aes(x = AI_Exposure_Index, y = Tech_Growth_Factor, 
+                        color = Education_Level)) +
+  geom_point(size = 3, alpha = 0.7) +
+  geom_smooth(method = "lm", se = TRUE, color = "black", linetype = "dashed") +
+  labs(title = "Fig 2: AI Exposure vs Technology Growth Factor",
+       x = "AI Exposure Index",
+       y = "Tech Growth Factor",
+       color = "Education Level") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5, face = "bold"))
+```
+
+# ============================================================================
+# FIGURE 3: Box Plot - Salary Distribution by Education Level
+# ============================================================================
+
+```{r fig3,include=FALSE}
+fig3 <- ggplot(dat, aes(x = reorder(Education_Level, Average_Salary, median), 
+                        y = Average_Salary, fill = Education_Level)) +
+  geom_boxplot(alpha = 0.7) +
+  coord_flip() +
+  labs(title = "Fig 3: Salary Distribution by Education Level",
+       x = "Education Level",
+       y = "Average Salary ($)") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5, face = "bold"),
+        legend.position = "none")
+```
+
+# ============================================================================
+# FIGURE 4: Box Plot - Automation Probability by Risk Category
+# ============================================================================
+
+```{r fig4,include=FALSE}
+fig4 <- ggplot(dat, aes(x = Risk_Category, y = Automation_Probability_2030, 
+                        fill = Risk_Category)) +
+  geom_boxplot(alpha = 0.7) +
+  scale_fill_manual(values = c("Low" = "#2ecc71", "Medium" = "#f39c12", 
+                               "High" = "#e74c3c")) +
+  labs(title = "Fig 4: Automation Probability Distribution by Risk Category",
+       x = "Risk Category",
+       y = "Automation Probability (2030)") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5, face = "bold"),
+        legend.position = "none")
+```
+
+# ============================================================================
+# FIGURE 5: Bar Chart - Average Salary by Risk Category
+# ============================================================================
+
+```{r fig5,include=FALSE}
+salary_by_risk <- dat %>%
+  group_by(Risk_Category) %>%
+  summarise(Avg_Salary = mean(Average_Salary),
+            SE = sd(Average_Salary) / sqrt(n()))
+
+fig5 <- ggplot(salary_by_risk, aes(x = Risk_Category, y = Avg_Salary, 
+                                   fill = Risk_Category)) +
+  geom_bar(stat = "identity", alpha = 0.7) +
+  geom_errorbar(aes(ymin = Avg_Salary - SE, ymax = Avg_Salary + SE), 
+                width = 0.2) +
+  scale_fill_manual(values = c("Low" = "#2ecc71", "Medium" = "#f39c12", 
+                               "High" = "#e74c3c")) +
+  labs(title = "Fig 5: Average Salary by Risk Category",
+       x = "Risk Category",
+       y = "Average Salary ($)") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5, face = "bold"),
+        legend.position = "none")
+```
+
+# ============================================================================
+# FIGURE 6: Bar Chart - Count of Jobs by Education Level and Risk Category
+# ============================================================================
+
+```{r fig6,include=FALSE}
+job_counts <- dat %>%
+  count(Education_Level, Risk_Category)
+
+fig6 <- ggplot(job_counts, aes(x = Education_Level, y = n, fill = Risk_Category)) +
+  geom_bar(stat = "identity", position = "dodge", alpha = 0.7) +
+  scale_fill_manual(values = c("Low" = "#2ecc71", "Medium" = "#f39c12", 
+                               "High" = "#e74c3c")) +
+  labs(title = "Fig 6: Job Count by Education Level and Risk Category",
+       x = "Education Level",
+       y = "Number of Jobs",
+       fill = "Risk Category") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5, face = "bold"),
+        axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+# ============================================================================
+# FIGURE 7: Histogram - Distribution of Years of Experience
+# ============================================================================
+
+```{r fig7,include=FALSE}
+fig7 <- ggplot(dat, aes(x = Years_Experience, fill = Risk_Category)) +
+  geom_histogram(binwidth = 3, alpha = 0.6, position = "identity") +
+  scale_fill_manual(values = c("Low" = "#2ecc71", "Medium" = "#f39c12", 
+                               "High" = "#e74c3c")) +
+  labs(title = "Fig 7: Distribution of Years of Experience by Risk Category",
+       x = "Years of Experience",
+       y = "Frequency",
+       fill = "Risk Category") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5, face = "bold"))
+```
+
+# ============================================================================
+# FIGURE 8: Histogram - Distribution of Average Skills
+# ============================================================================
+# Calculate average skill level for each job
+
+```{r fig8,include=FALSE}
+dat$Avg_Skill <- rowMeans(dat[, c("Skill_1", "Skill_2", "Skill_3", "Skill_4", 
+                                  "Skill_5", "Skill_6", "Skill_7", "Skill_8", 
+                                  "Skill_9", "Skill_10")], na.rm = TRUE)
+
+fig8 <- ggplot(dat, aes(x = Avg_Skill, fill = Education_Level)) +
+  geom_histogram(binwidth = 0.05, alpha = 0.6, position = "identity") +
+  labs(title = "Fig 8: Distribution of Average Skill Levels by Education",
+       x = "Average Skill Level",
+       y = "Frequency",
+       fill = "Education Level") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5, face = "bold"))
+```
+
+# ============================================================================
+# DISPLAY ALL FIGURES
+# ============================================================================
+
+# Display figures individually
+```{r plots, echo=FALSE}
+print(fig1)
+print(fig2)
+print(fig3)
+print(fig4)
+print(fig5)
+print(fig6)
+print(fig7)
+print(fig8)
+```
+
+# Optional: Display all figures in a grid (requires sufficient screen space)
+# grid.arrange(fig1, fig2, fig3, fig4, ncol = 2)
+# grid.arrange(fig5, fig6, fig7, fig8, ncol = 2)
+
+# ============================================================================
+# SAVE FIGURES (Optional)
+# ============================================================================
+# Uncomment the following lines to save figures as PNG files
+
+# ggsave("figure1_salary_vs_automation.png", fig1, width = 10, height = 6, dpi = 300)
+# ggsave("figure2_ai_vs_tech_growth.png", fig2, width = 10, height = 6, dpi = 300)
+# ggsave("figure3_salary_by_education.png", fig3, width = 10, height = 6, dpi = 300)
+# ggsave("figure4_automation_by_risk.png", fig4, width = 10, height = 6, dpi = 300)
+# ggsave("figure5_avg_salary_by_risk.png", fig5, width = 10, height = 6, dpi = 300)
+# ggsave("figure6_jobs_by_education_risk.png", fig6, width = 10, height = 6, dpi = 300)
+# ggsave("figure7_experience_distribution.png", fig7, width = 10, height = 6, dpi = 300)
+# ggsave("figure8_skill_distribution.png", fig8, width = 10, height = 6, dpi = 300)
+
+
+
+

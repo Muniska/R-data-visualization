@@ -1,0 +1,181 @@
+---
+title: "Spatial Figures Peer Review"
+output: html_document
+---
+# ABDUKARIMOVA MUNISA
+
+## Problem 1
+
+Create the following figure, using the data included in the R Markdown file.
+
+```{r problem_1_data,include=FALSE}
+
+library(tidyverse)
+library(maps)
+
+####make some data for painting the map
+
+my_world_map <- map_data("world")
+
+countries <- unique(my_world_map$region)
+
+set.seed(987)
+some_data_values <- data.frame(
+
+  "region"=countries,
+  
+  "Score"=runif(252,0,100))
+
+```
+
+```{r problem_1,echo=FALSE,message=FALSE}
+
+####Make sure you install any necessary libraries
+
+####HINT: Use the following code to get the colors right
+#scale_fill_distiller(palette=5)
+
+####HINT: make sure you use left_join to combine the data_values above to the world map data in my_world_map
+
+library(tidyverse)
+library(maps)
+
+# Get map data
+my_world_map <- map_data("world")
+countries <- unique(my_world_map$region)
+
+set.seed(987)
+some_data_values <- data.frame(
+  "region" = countries,
+  "Score" = runif(length(countries), 0, 100)
+)
+
+# Merge map and score data
+map_df <- left_join(my_world_map, some_data_values, by = "region")
+
+# Plot
+ggplot(map_df, aes(x = long, y = lat, group = group, fill = Score)) +
+  geom_polygon(color = "white") +
+  scale_fill_distiller(palette = "Greens", direction = 1) +
+  labs(fill = "Score") +
+  theme_minimal()
+
+```
+
+## Problem 2
+
+Create the following figure, using the data included in the R Markdown file.
+
+
+```{r problem_2_data,include=FALSE}
+
+#####DO NOT MODIFY THIS CHUNK
+set.seed(15)
+Measurement<-rnorm(32,50,1)
+```
+
+
+```{r solution_p2,echo=FALSE,message=FALSE}
+
+####Make sure you load any necessary libraries
+
+####HINT: Use a filter command to get just maps of Costa Rica, Panama, and Nicaragua
+
+####Hint: Use a filter command to put in points only for cities with a population of greater than 40,000. This should leave you with 32 cities.
+
+####Hint: Use add_column to attach the "Measurement" variable to your data, and set that to the color aesthetic when you draw the points.
+
+####Hint: set the colors for the city points with scale_color_distiller(palette=7)
+
+####Hint: set the size of all points to the value 5
+library(tidyverse)
+library(maps)
+data(world.cities)
+
+# Get map data
+my_world_map <- map_data("world")
+countries <- unique(my_world_map$region)
+
+# City data: requires 'world.cities' (comes with maps)
+set.seed(15)
+Measurement <- rnorm(32, 50, 1)
+
+# Filter map for Costa Rica, Panama, Nicaragua
+central_america_map <- my_world_map %>%
+  filter(region %in% c("Costa Rica", "Panama", "Nicaragua"))
+
+# Filter cities for those 3 countries + pop > 40,000
+city_data <- world.cities %>%
+  filter(country.etc %in% c("Costa Rica", "Panama", "Nicaragua"), pop > 40000) %>%
+  slice(1:32) %>%
+  add_column(Measurement = Measurement)
+
+
+# Produce figure
+ggplot() +
+  geom_polygon(data = central_america_map, 
+               aes(x = long, y = lat, group = group), 
+               fill = NA, color = "black") +
+  geom_point(data = city_data, 
+             aes(x = long, y = lat, color = Measurement), 
+             size = 5) +
+  scale_color_distiller(palette = 7, direction = 1) +
+  labs(color = "Measurement") +
+  theme_minimal()
+
+
+
+```
+
+## Problem 3
+
+Create the following figure, using the data included in the R Markdown file.
+
+Note that the code in the .rmd file will import a set of simple features data for South America. Make sure you install any necessary packages. 
+
+```{r problem_3_data,include=FALSE}
+
+#####INSTALL THESE PACKAGES IF NECESSARY
+library(sf)
+library(rnaturalearth)
+library(rnaturalearthdata)
+
+
+####DO NOT MODIFY
+s_america<-ne_countries(scale="medium",continent='south america',returnclass="sf")
+
+```
+
+```{r problem3,echo=FALSE}
+
+####Make sure you load any necessary libraries
+
+####HINT: the s_america object created in the chunk above is a simple features object with many columns. Identify the correct column based on the solution figure and use it to color in the choropleth.
+
+####HINT: Use scale_fill_distiller and palette 10 to the match the colors.
+install.packages("sf")
+library(sf)
+library(ggplot2)
+install.packages("rnaturalearth")
+library(rnaturalearth)
+install.packages("rnaturalearthdata")
+library(rnaturalearthdata)
+
+
+# Download South America countries as an sf object
+s_america <- ne_countries(scale = "medium", continent = 'south america', returnclass = "sf")
+
+# View structure to find an appropriate column for choropleth coloring
+# str(s_america)
+
+# Most typical for demo is to color by 'pop_est' (population estimate column)
+ggplot(s_america) +
+  geom_sf(aes(fill = pop_est), color = "white") +
+  scale_fill_distiller(palette = 10, direction = 1) +
+  labs(fill = "Estimated Population") +
+  theme_minimal()
+
+
+```
+
+

@@ -1,0 +1,131 @@
+---
+title: "Week 3 Peer Review"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+
+######DO NOT MODIFY. This will load required packages and data.
+
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+
+cces <- drop_na(read_csv(url("https://www.dropbox.com/s/ahmt12y39unicd2/cces_sample_coursera.csv?raw=1")))
+
+cel <- drop_na(read_csv(url("https://www.dropbox.com/s/4ebgnkdhhxo5rac/cel_volden_wiseman%20_coursera.csv?raw=1")))
+
+```
+
+Following the directions on the Coursera assignment page, you will make four original visualizations. Note that the data for the CCES and CEL data are imported in code in the R Markdown file.
+
+
+## Exercise 1
+
+
+```{r exercise1,echo=FALSE}
+
+library(ggplot2)
+library(dplyr)
+
+# Recode religious importance for axis labels (update levels as per your codebook)
+cces <- cces %>%
+  mutate(
+    pew_religimp = factor(pew_religimp, levels = c(1, 2, 3, 4), 
+      labels = c("Not at all important", "Not too important", "Somewhat important", "Very important")),
+    Ideology = factor(ideo5)
+  )
+
+# Bar plot visualizing ideological identity by religious importance
+ggplot(cces, aes(x = pew_religimp, fill = Ideology)) +
+  geom_bar(position = "dodge") +
+  labs(
+    title = "Ideological Identity Across Levels of Religious Importance",
+    x = "Importance of Religion",
+    y = "Count",
+    fill = "Ideology"
+  ) +
+  theme_minimal()
+
+
+  
+
+```
+
+## Exercise 2
+
+
+```{r exercise2,echo=FALSE}
+
+# Create readable labels for region and employ if needed
+cces <- cces %>%
+  mutate(
+    region = factor(region, levels = c(1, 2, 3, 4), 
+      labels = c("Northeast", "Midwest", "South", "West")),  # Update labels based on your codebook
+    employ = factor(employ)
+  )
+
+# Plot: Employment Status Distribution by Region
+ggplot(cces, aes(x = region, fill = employ)) +
+  geom_bar(position = "fill") +
+  labs(
+    title = "Employment Status Distribution Across US Regions",
+    x = "Region",
+    y = "Proportion",
+    fill = "Employment Status"
+  ) +
+  theme_minimal()
+  
+```
+
+## Exercise 3
+
+
+```{r exercise3,echo=FALSE}
+
+# Create readable labels for party affiliation
+cel <- cel %>%
+  mutate(
+    party = ifelse(dem == 1, "Democrat", "Republican"),
+    st_name = factor(st_name)
+  )
+
+# Plot: Party Membership by State
+ggplot(cel, aes(x = st_name, fill = party)) +
+  geom_bar(position = "dodge") +
+  labs(
+    title = "Democratic vs Republican Membership by State",
+    x = "State",
+    y = "Count",
+    fill = "Party"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+
+```
+
+## Exercise 4
+
+
+```{r exercise4,echo=FALSE}
+
+# Assume your data is loaded as 'cel'
+cel <- cel %>%
+  mutate(
+    party = ifelse(dem == 1, "Democrat", "Republican"),
+    year = as.factor(year)
+  )
+
+# Plot: Vote Percentage Distribution by Year and Party
+ggplot(cel, aes(x = year, y = votepct, fill = party)) +
+  geom_boxplot() +
+  labs(
+    title = "Distribution of Vote Percentage by Party Across Years",
+    x = "Year",
+    y = "Vote Percentage",
+    fill = "Party"
+  ) +
+  theme_minimal()
+
+```

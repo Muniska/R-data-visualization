@@ -1,0 +1,147 @@
+---
+title: "Animations and Interactivity"
+output: html_document
+---
+
+# MUNISA ABDUKARIMOVA
+
+## Problem 1
+
+```{r problem_1_data,include=FALSE}
+
+#####DO NOT MODIFY THIS CHUNK
+library(tidyverse)
+
+Category<-c("Alpha","Beta","Zeta")
+City<-c("Hong Kong","London","Nairobi")
+
+my_dat<-expand_grid(Category,City)
+
+set.seed(84684)
+
+my_dat$Value<-sample(1:10,9,replace=T)
+```
+
+```{r problem_1_solution,echo=FALSE,message=FALSE,warning=FALSE}
+library(tidyverse)
+library(gganimate)
+library(gifski)
+
+Category <- c("Alpha", "Beta", "Zeta")
+City <- c("Hong Kong", "London", "Nairobi")
+
+my_dat <- expand_grid(Category, City)
+
+set.seed(84684)
+my_dat$Value <- sample(1:10, 9, replace = TRUE)
+
+# Create animated plot
+p <- ggplot(my_dat, aes(x = Category, y = Value, fill = City)) +
+  geom_col(position = "dodge") +
+  labs(title = "Animated Value by Category", y = "Value", x = "Category") +
+  theme_minimal() +
+  transition_states(City, transition_length = 2, state_length = 1) +
+  labs(subtitle = 'City: {closest_state}')
+
+# Animate and save gif
+animate(p, renderer = gifski_renderer())
+
+
+
+```
+
+## Problem 2
+
+```{r problem_2_data,include=FALSE}
+
+#####DO NOT MODIFY THIS CHUNK
+
+Response<-c("Energize","Amazing","Great")
+set.seed(9819)
+Energize<-tibble(Company=rep("Energize",100),Output=rnorm(100,50,20))
+set.seed(9819)
+Amazing<-tibble(Company=rep("Amazing",100),Output=rnorm(100,50,10))
+set.seed(9819)
+Great<-tibble(Company=rep("Great",100),Output=rnorm(100,40,5))
+
+my_dat<-bind_rows(Energize,Amazing,Great)
+```
+
+```{r problem_2_solution,echo=FALSE,message=FALSE,warning=FALSE}
+
+library(tidyverse)
+library(plotly)
+
+Response <- c("Energize", "Amazing", "Great")
+set.seed(9819)
+Energize <- tibble(Company = rep("Energize", 100), Output = rnorm(100, 50, 20))
+set.seed(9819)
+Amazing <- tibble(Company = rep("Amazing", 100), Output = rnorm(100, 50, 10))
+set.seed(9819)
+Great <- tibble(Company = rep("Great", 100), Output = rnorm(100, 40, 5))
+my_dat <- bind_rows(Energize, Amazing, Great)
+
+fig <- plot_ly(
+  my_dat, 
+  x = ~Company, 
+  y = ~Output, 
+  color = ~Company, 
+  colors = c('green', 'red', 'blue'),
+  type = "box"
+) %>%
+  layout(
+    yaxis = list(title = "Output"),
+    xaxis = list(title = "Company"),
+    boxmode = "group"
+  )
+
+fig
+
+
+```
+
+## Problem 3
+
+```{r problem_3_data,echo=FALSE,message=FALSE,warning=FALSE}
+
+library(plotly)
+
+Category<-seq(from=1,to=10)
+Time<-seq(from=1,to=10)
+
+dat3<-expand_grid(Category,Time)
+
+set.seed(78957)
+dat3$Quantity<-runif(100,0,10)
+```
+
+
+```{r problem_3_solution,echo=FALSE,message=FALSE,warning=FALSE}
+
+library(tidyverse)
+library(plotly)
+
+Category <- seq(from = 1, to = 10)
+Time <- seq(from = 1, to = 10)
+
+dat3 <- expand_grid(Category, Time)
+
+set.seed(78957)
+dat3$Quantity <- runif(100, 0, 10)
+
+plot_ly(
+  dat3,
+  x = ~Category, y = ~Quantity,
+  frame = ~Time,
+  type = 'scatter',
+  mode = 'markers',
+  marker = list(size = 15, color = ~Category, colorscale = 'Viridis')
+) %>%
+  layout(
+    title = "Animated scatter: Category vs Quantity over Time",
+    xaxis = list(title = "Category"),
+    yaxis = list(title = "Quantity")
+  )
+
+
+```
