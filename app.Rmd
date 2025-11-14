@@ -1,0 +1,126 @@
+---
+title: "Peer Review Three"
+output:
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+date: "2025-11-08"
+runtime: shiny
+resource_files:
+- "qLl3fxRET4C5d38URC-AMA_b8eb2b8806784d84b7b5da897caaab7e_cel_volden_wiseman_coursera
+  (1).csv"
+- cel_volden_wiseman_coursera.csv.csv
+---
+
+```{r,echo=FALSE,message=FALSE,warning=FALSE}
+library(flexdashboard)
+library(tidyverse)
+library(plotly)
+library(shiny)
+library(ggplot2)
+library(DT)
+library(dplyr)
+library(readr)
+
+dat <- read_csv(url("https://www.dropbox.com/s/4ebgnkdhhxo5rac/cel_volden_wiseman%20_coursera.csv?raw=1"))
+dat$Party <- recode(dat$dem, `1` = "Democrat", `0` = "Republican")
+
+#######HINT: for Chart D, you'll need to set the height of the renderPlot, using the height argument. Try a value of 750.
+
+#####some data management functions are already included. You need to add the visualization functions.
+
+```
+
+
+Page 1
+======
+
+### Chart A
+
+```{r page1, include=FALSE}
+
+dat %>% 
+  drop_na() %>% 
+  group_by(year, Party) %>% 
+  summarise(mean_les = mean(les, na.rm = TRUE)) %>% 
+  ggplot(aes(x = year, y = mean_les, color = Party)) +
+  geom_line(size = 1.2) +
+  labs(title = "Средний показатель LES по годам и партиям",
+       x = "Год", y = "Средний LES") +
+  theme_minimal()
+
+
+```
+
+---
+
+Page 2
+======
+
+### Chart B {.tabset}
+#### Chart B
+
+
+```{r page2, include=FALSE}
+dat %>%
+  drop_na() %>%
+  ggplot(aes(x = dwnom1, fill = Party)) +
+  geom_density(alpha = 0.5) +
+  labs(title = "Распределение идеологии (DW-NOMINATE)",
+       x = "Идеология", y = "Плотность") +
+  theme_minimal()
+
+
+```
+
+
+### Chart C
+
+```{r chart C, setup, include=FALSE}
+dat %>%
+  drop_na() %>%
+  ggplot(aes(x = seniority, y = les, color = Party)) +
+  geom_point(alpha = 0.6) +
+  geom_smooth(method = "lm", se = FALSE, linetype = "dashed") +
+  labs(title = "Опыт и результативность членов Конгресса",
+       x = "Количество сроков", y = "Эффективность (LES)") +
+  theme_minimal()
+
+```
+
+---
+
+Page 3
+======
+
+### Chart D
+
+Inputs {.sidebar}
+
+```{r chart D, setup, include=FALSE}
+
+####hint: this figure uses selectInput with the multiple option set to true and with the options set up so that all states are initially selected.
+
+ states <- sort(unique(dat$st_name))
+
+inputPanel(
+  selectInput("chosen_states", "Выберите штаты:", 
+              choices = states, selected = states, multiple = TRUE)
+)
+
+renderPlot({
+  dat %>% 
+    filter(st_name %in% input$chosen_states) %>%
+    group_by(st_name, Party) %>%
+    summarise(mean_les = mean(les, na.rm = TRUE)) %>%
+    ggplot(aes(x = reorder(st_name, mean_les), y = mean_les, fill = Party)) +
+    geom_col(position = "dodge") +
+    coord_flip() +
+    labs(title = "Средняя эффективность по штатам и партиям",
+         x = "Штат", y = "Средний LES") +
+    theme_minimal()
+}, height = 750)
+
+```
+
+

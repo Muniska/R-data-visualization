@@ -1,0 +1,339 @@
+---
+title: "AI IMPACT ON JOBS"
+author: "MUNISA ABDUKARIMOVA"
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    theme: flatly
+    toc: true
+    toc_float: true
+    code_folding: hide
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, fig.width = 10, fig.height = 6)
+```
+
+```{r libraries}
+# Load required libraries
+library(flexdashboard)
+library(tidyverse)
+library(plotly)
+library(shiny)
+library(DT)
+library(rsconnect)
+library(dplyr)
+library(readr)
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(viridis)
+library(scales)
+library(ggridges)
+library(gganimate)
+library(transformr)
+
+dat <- read.csv("AI_Impact_on_Jobs_2030.csv")
+
+# Set theme
+theme_set(theme_minimal(base_size = 12))
+```
+
+```{r load-data}
+# Assuming 'dat' is already loaded in your environment
+# If not, load it with: dat <- read.csv("your_data.csv")
+
+# Data cleaning and preparation
+dat <- dat %>%
+  mutate(
+    Risk_Category = factor(Risk_Category, levels = c("Low", "Medium", "High")),
+    Education_Level = factor(Education_Level, 
+                            levels = c("High School", "Bachelor's", "Master's", "PhD"))
+  )
+```
+
+## Introduction
+
+This analysis explores the relationship between job characteristics, automation risk, and workforce trends across various professions. We examine how education, experience, and technological exposure influence career trajectories in an increasingly automated economy.
+
+---
+
+## Figure 1: Automation Risk by Education Level and Salary
+
+```{r fig1-boxplot}
+# Box plot showing salary distribution by education and risk
+p1 <- ggplot(dat, aes(x = Education_Level, y = Average_Salary, fill = Risk_Category)) +
+  geom_boxplot(alpha = 0.7, outlier.alpha = 0.5) +
+  scale_fill_manual(values = c("Low" = "#2ecc71", "Medium" = "#f39c12", "High" = "#e74c3c")) +
+  scale_y_continuous(labels = dollar_format(prefix = "$", big.mark = ",")) +
+  labs(
+    title = "Salary Distribution by Education Level and Automation Risk",
+    subtitle = "Higher education correlates with lower automation risk and higher salaries",
+    x = "Education Level",
+    y = "Average Salary",
+    fill = "Automation Risk"
+  ) +
+  theme(
+    plot.title = element_text(face = "bold", size = 14),
+    legend.position = "right",
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
+
+print(p1)
+```
+
+**Key Insight:** Higher education levels are associated with both higher salaries and lower automation risk, suggesting education as a protective factor against workforce automation.
+
+---
+
+## Figure 2: Interactive Scatter Plot - AI Exposure vs. Automation Probability
+
+```{r fig2-interactive}
+# Interactive plotly scatter plot
+p2 <- plot_ly(dat, 
+              x = ~AI_Exposure_Index, 
+              y = ~Automation_Probability_2030,
+              color = ~Risk_Category,
+              colors = c("Low" = "#2ecc71", "Medium" = "#f39c12", "High" = "#e74c3c"),
+              size = ~Average_Salary,
+              sizes = c(50, 500),
+              text = ~paste("Job:", Job_Title,
+                           "<br>Salary: $", format(Average_Salary, big.mark = ","),
+                           "<br>AI Exposure:", round(AI_Exposure_Index, 2),
+                           "<br>Automation Prob:", round(Automation_Probability_2030, 2)),
+              hoverinfo = "text",
+              type = "scatter",
+              mode = "markers",
+              marker = list(opacity = 0.7, line = list(color = "white", width = 1))) %>%
+  layout(
+    title = list(text = "AI Exposure vs. Automation Probability by 2030<br><sub>Bubble size represents salary level</sub>"),
+    xaxis = list(title = "AI Exposure Index"),
+    yaxis = list(title = "Automation Probability (2030)"),
+    hovermode = "closest",
+    showlegend = TRUE
+  )
+
+p2
+```
+
+**Key Insight:** There's a strong positive correlation between AI exposure and automation probability, with high-risk jobs clustering in the upper-right quadrant.
+
+---
+
+## Figure 3: Technology Growth vs. Experience Requirements
+
+```{r fig3-scatter}
+# Scatter plot with trend lines
+p3 <- ggplot(dat, aes(x = Years_Experience, y = Tech_Growth_Factor, color = Risk_Category)) +
+  geom_point(alpha = 0.6, size = 3) +
+  geom_smooth(method = "lm", se = TRUE, alpha = 0.2, linewidth = 1.2) +
+  scale_color_manual(values = c("Low" = "#2ecc71", "Medium" = "#f39c12", "High" = "#e74c3c")) +
+  labs(
+    title = "Technology Growth Factor by Years of Experience Required",
+    subtitle = "Examining the relationship between experience requirements and tech adoption rates",
+    x = "Years of Experience Required",
+    y = "Technology Growth Factor",
+    color = "Automation Risk"
+  ) +
+  theme(
+    plot.title = element_text(face = "bold", size = 14),
+    legend.position = "bottom"
+  )
+
+print(p3)
+```
+
+**Key Insight:** Jobs requiring more experience show varied technology growth rates, with risk categories displaying distinct trajectory patterns.
+
+---
+
+## Figure 4: Skill Distribution Heatmap
+
+```{r fig4-heatmap}
+# Prepare skill data for heatmap
+skill_data <- dat %>%
+  select(Job_Title, starts_with("Skill_")) %>%
+  pivot_longer(cols = starts_with("Skill_"), names_to = "Skill", values_to = "Value") %>%
+  group_by(Skill) %>%
+  slice_max(order_by = Value, n = 15) %>%
+  ungroup()
+
+p4 <- ggplot(skill_data, aes(x = Skill, y = reorder(Job_Title, Value), fill = Value)) +
+  geom_tile(color = "white", linewidth = 0.5) +
+  scale_fill_viridis(option = "plasma", name = "Skill Level") +
+  labs(
+    title = "Top 15 Jobs by Skill Requirements Across Skill Dimensions",
+    subtitle = "Darker colors indicate higher skill requirements",
+    x = "Skill Dimension",
+    y = "Job Title"
+  ) +
+  theme(
+    plot.title = element_text(face = "bold", size = 14),
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    axis.text.y = element_text(size = 8)
+  )
+
+print(p4)
+```
+
+**Key Insight:** Different professions show distinct skill requirement profiles, with some jobs demanding high levels across multiple dimensions.
+
+---
+
+## Figure 5: Salary Distribution by Risk Category (Ridge Plot)
+
+```{r fig5-ridge}
+# Ridge plot for salary distribution
+p5 <- ggplot(dat, aes(x = Average_Salary, y = Risk_Category, fill = Risk_Category)) +
+  geom_density_ridges(alpha = 0.7, scale = 0.9) +
+  scale_fill_manual(values = c("Low" = "#2ecc71", "Medium" = "#f39c12", "High" = "#e74c3c")) +
+  scale_x_continuous(labels = dollar_format(prefix = "$", big.mark = ",")) +
+  labs(
+    title = "Salary Distribution Across Automation Risk Categories",
+    subtitle = "Density plots reveal salary patterns within each risk group",
+    x = "Average Salary",
+    y = "Automation Risk Category"
+  ) +
+  theme(
+    plot.title = element_text(face = "bold", size = 14),
+    legend.position = "none"
+  )
+
+print(p5)
+```
+
+**Key Insight:** Low-risk jobs show a wider salary distribution with higher peaks, while high-risk jobs cluster at lower salary ranges.
+
+---
+
+## Figure 6: Animated Bar Chart - Top 10 Jobs by Salary and Risk
+
+```{r fig6-animated}
+# Prepare data for animation
+
+library(gifski)
+library(png)
+## Figure 6: Interactive Animated Scatter - Salary vs Experience Over Time
+
+# Create plotly animation
+p6 <- dat %>%
+  mutate(AI_Group = cut(AI_Exposure_Index, 
+                        breaks = 5, 
+                        labels = c("Very Low", "Low", "Moderate", "High", "Very High"))) %>%
+  plot_ly(x = ~Years_Experience, 
+          y = ~Average_Salary,
+          color = ~Risk_Category,
+          colors = c("Low" = "#2ecc71", "Medium" = "#f39c12", "High" = "#e74c3c"),
+          size = ~Automation_Probability_2030,
+          sizes = c(50, 400),
+          frame = ~AI_Group,
+          text = ~paste("Job:", Job_Title),
+          hoverinfo = "text",
+          type = "scatter",
+          mode = "markers") %>%
+  layout(title = "Salary vs Experience Across AI Exposure Levels",
+         xaxis = list(title = "Years of Experience"),
+         yaxis = list(title = "Average Salary"))
+
+p6
+```
+
+**Key Insight:** High-paying jobs span across different AI exposure levels, showing that salary is not solely determined by automation risk.
+
+---
+
+## Figure 7: Dumbbell Chart - Education Level Impact on Automation Risk
+
+```{r fig7-dumbbell}
+# Calculate mean automation probability by education
+education_impact <- dat %>%
+  group_by(Education_Level) %>%
+  summarise(
+    Min_Auto = min(Automation_Probability_2030),
+    Max_Auto = max(Automation_Probability_2030),
+    Mean_Auto = mean(Automation_Probability_2030)
+  ) %>%
+  arrange(desc(Mean_Auto))
+
+p7 <- ggplot(education_impact) +
+  geom_segment(aes(x = Min_Auto, xend = Max_Auto, 
+                   y = reorder(Education_Level, Mean_Auto), 
+                   yend = Education_Level),
+               color = "gray70", linewidth = 1.5) +
+  geom_point(aes(x = Min_Auto, y = Education_Level), 
+             color = "#3498db", size = 4) +
+  geom_point(aes(x = Max_Auto, y = Education_Level), 
+             color = "#e74c3c", size = 4) +
+  geom_point(aes(x = Mean_Auto, y = Education_Level), 
+             color = "#2ecc71", size = 5, shape = 18) +
+  labs(
+    title = "Range of Automation Probability by Education Level",
+    subtitle = "Blue: minimum | Green diamond: mean | Red: maximum",
+    x = "Automation Probability (2030)",
+    y = "Education Level"
+  ) +
+  theme(
+    plot.title = element_text(face = "bold", size = 14)
+  )
+
+print(p7)
+
+```
+
+**Key Insight:** Higher education levels show lower mean automation probabilities and narrower ranges, indicating more consistent protection against automation.
+
+---
+
+## Figure 8: Faceted Bar Chart - Risk Category Distribution by Education
+
+```{r fig8-facet}
+# Calculate proportions
+risk_education <- dat %>%
+  count(Education_Level, Risk_Category) %>%
+  group_by(Education_Level) %>%
+  mutate(Proportion = n / sum(n) * 100)
+
+p8 <- ggplot(risk_education, aes(x = Risk_Category, y = Proportion, fill = Risk_Category)) +
+  geom_col(alpha = 0.8, show.legend = FALSE) +
+  geom_text(aes(label = paste0(round(Proportion, 1), "%")), 
+            vjust = -0.5, size = 3.5, fontface = "bold") +
+  scale_fill_manual(values = c("Low" = "#2ecc71", "Medium" = "#f39c12", "High" = "#e74c3c")) +
+  facet_wrap(~Education_Level, nrow = 1) +
+  labs(
+    title = "Automation Risk Distribution Across Education Levels",
+    subtitle = "Percentage of jobs in each risk category by educational requirement",
+    x = "Automation Risk Category",
+    y = "Percentage of Jobs (%)"
+  ) +
+  theme(
+    plot.title = element_text(face = "bold", size = 14),
+    strip.text = element_text(face = "bold", size = 11),
+    strip.background = element_rect(fill = "gray90"),
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  ) +
+  ylim(0, 100)
+
+print(p8)
+```
+
+**Key Insight:** PhD-level positions show the highest proportion of low-risk jobs (over 50%), while high school education shows a more balanced distribution across risk categories.
+
+---
+
+## Conclusions
+
+This comprehensive analysis reveals several critical insights about the future of work:
+
+1. **Education as Protection**: Higher education levels consistently correlate with lower automation risk and higher salaries.
+
+2. **AI Exposure Correlation**: Jobs with higher AI exposure indices face significantly higher automation probabilities by 2030.
+
+3. **Skill Diversification**: Jobs requiring diverse skill sets show more resilience against automation.
+
+4. **Risk Distribution**: The workforce shows clear stratification, with high-risk jobs clustered in lower-paying, lower-education sectors.
+
+5. **Strategic Implications**: Workers and policymakers should prioritize education, continuous learning, and skill development in areas less susceptible to automation.
+
+
+
+
